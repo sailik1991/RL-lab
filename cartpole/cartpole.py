@@ -50,9 +50,7 @@ def run(render):
 
     def policy_gradient_loss(y_true, y_pred):
         # y_true has the index of the action taken by the RL agent
-        cc = categorical_crossentropy(y_true, y_pred)
-        loss = cc * dis_rewards
-        return loss
+        return categorical_crossentropy(y_true, y_pred) * dis_rewards
 
     optimizer = Adam(lr=1e-2)
     RL_agent_train.compile(loss=policy_gradient_loss, optimizer=optimizer)
