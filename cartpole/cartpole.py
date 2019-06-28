@@ -21,7 +21,7 @@ obtained in that episode.
 
 def get_discounted_rewards(r, gamma=0.99):
     """Takes 1d float array of rewards and computes discounted reward
-    e.g. f([1, 2, 3], 1) -> [5.92, 4.97, 3]
+    e.g. f([1, 2, 3], 0.99) -> [5.92, 4.97, 3]
     """
     r.reverse()
     prior = 0
@@ -112,7 +112,7 @@ def run(render):
                 episodes.append(e)
                 pylab.plot(episodes, scores, 'b')
                 pylab.savefig("./cartpole_reinforce.png")
-                print("episode:", e, "  score:", score, " loss:", model_loss)
+                print("Episode: {} \tScore: {} \tLoss: {}".format(e, score, model_loss))
 
                 # if the mean of scores of last 10 episode is bigger than 490
                 # stop training
