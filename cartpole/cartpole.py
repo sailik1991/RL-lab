@@ -74,7 +74,7 @@ def run(render):
 
             # Determine action that needs to be done
             pi = RL_agent_predict.predict(state)
-            action = np.random.choice(range(2), p=pi[0])
+            action = np.random.choice(range(action_size), p=pi[0])
             next_state, reward, done, info = env.step(action)
 
             next_state = np.reshape(next_state, [1, state_size])
