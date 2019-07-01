@@ -1,15 +1,18 @@
-import sys
 import gym
-import pylab
 import numpy as np
+import pylab
+import sys
+import argparse
+
+# Using tensorflow.python.keras apparently slows the convergence, why?
+
+from keras import backend as K
 from keras.layers import Input, Dense
+from keras.losses import categorical_crossentropy
 from keras.models import Model
 from keras.models import Sequential
-from keras.losses import categorical_crossentropy
 from keras.optimizers import Adam
 from keras.utils import to_categorical
-
-EPISODES = 1000
 
 '''
 Set up code taken from repo: https://github.com/rlcode/
@@ -17,6 +20,8 @@ This class uses the categorical crossentropy loss function where the true predic
 actions taken by the RL agent during the episode. It uses a custom loss function to scale this using the rewards
 obtained in that episode.
 '''
+
+EPISODES = 1000
 
 
 def get_discounted_rewards(r, gamma=0.99):
@@ -50,7 +55,20 @@ def run(render):
 
     def policy_gradient_loss(y_true, y_pred):
         # y_true has the index of the action taken by the RL agent
-        return categorical_crossentropy(y_true, y_pred) * dis_rewards
+
+        # Keras implementation of http://rail.eecs.berkeley.edu/deeprlcourse/static/slides/lec-5.pdf
+        # Mostly works within 500 episodes, but 1000 given for safety
+        neg_log_prob = categorical_crossentropy(y_true, y_pred)
+        weighted_neg_log_prob = neg_log_prob * dis_rewards
+        loss = K.mean(weighted_neg_log_prob)
+
+        # Implementations out there that work at times, why?
+        # loss = weighted_neg_log_prob
+
+        # Implementations out there that do not work
+        # loss = K.sum(weighted_neg_log_prob)
+
+        return loss
 
     optimizer = Adam(lr=1e-2)
     RL_agent_train.compile(loss=policy_gradient_loss, optimizer=optimizer)
@@ -112,12 +130,11 @@ def run(render):
                 pylab.savefig("./cartpole_reinforce.png")
                 print("Episode: {} \tScore: {} \tLoss: {}".format(e, score, model_loss))
 
-                # if the mean of scores of last 10 episode is bigger than 490
-                # stop training
-                if np.mean(scores[-min(20, len(scores)):]) > 490:
+                # If the mean of scores of last 25 episode is bigger than 490, stop training
+                # People generally stop at much less. For eg. 10 good episodes.
+                if np.mean(scores[-min(25, len(scores)):]) > 490:
                     sys.exit()
 
-import argparse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
