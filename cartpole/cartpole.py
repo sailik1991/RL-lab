@@ -1,18 +1,14 @@
-import gym
-import numpy as np
-import pylab
 import sys
+import gym
+import pylab
 import argparse
-
-# Using tensorflow.python.keras apparently slows the convergence, why?
-
+import numpy as np
 from keras import backend as K
-from keras.layers import Input, Dense
-from keras.losses import categorical_crossentropy
 from keras.models import Model
-from keras.models import Sequential
 from keras.optimizers import Adam
+from keras.layers import Input, Dense
 from keras.utils import to_categorical
+from keras.losses import categorical_crossentropy
 
 '''
 Set up code taken from repo: https://github.com/rlcode/
@@ -35,9 +31,11 @@ def get_discounted_rewards(r, gamma=0.99):
         new_val = val + prior * gamma
         out.append(new_val)
         prior = new_val
-    out = np.array(out[::-1])
-    return out.reshape(out.shape[0], 1)
+    return np.array(out[::-1])
 
+    # Send an extra time-axis dimension if working with time-series data.
+    # out = np.array(out[::-1])
+    # return out.reshape(out.shape[0], 1)
 
 def run(render):
     env = gym.make('CartPole-v1')
@@ -58,15 +56,23 @@ def run(render):
 
         # Keras implementation of http://rail.eecs.berkeley.edu/deeprlcourse/static/slides/lec-5.pdf
         # Mostly works within 500 episodes, but 1000 given for safety
+        # (N, ) <- (N, C), (N, C)
         neg_log_prob = categorical_crossentropy(y_true, y_pred)
+
+        # (N, ) <- (N, ), (N, )
         weighted_neg_log_prob = neg_log_prob * dis_rewards
-        loss = K.mean(weighted_neg_log_prob)
+        
+        # (N, ) <- (N, )
+        loss = K.mean(weighted_neg_log_prob, axis=-1)
 
-        # Implementations out there that work at times, why?
+        # ---
+        # Other implementations out there that work too, why?
+        # [Update 19/07/19]
+        # Essentially doing the mean operation does nothing extra because weighted_neg_log_prob
+        # is a list with real numbers. Thus, averaging over the last axis does not do anything extra.
+        # Necessary when we are dealing with time series data. Thus, let it be.
+        # ---
         # loss = weighted_neg_log_prob
-
-        # Implementations out there that do not work
-        # loss = K.sum(weighted_neg_log_prob)
 
         return loss
 
